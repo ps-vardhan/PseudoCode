@@ -22,8 +22,6 @@ Features:
 - Fast Transcription: Returns the transcribed text from the audio as fast
   as possible.
 
-Author: Kolja Beigel
-
 """
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline

@@ -1,18 +1,7 @@
 # Speech-to-Text
-[![PyPI](https://img.shields.io/pypi/v/speech-to-text)](https://pypi.org/project/speech-to-text/)
-[![Downloads](https://static.pepy.tech/badge/speech-to-text)](https://www.pepy.tech/projects/speech-to-text)
-[![GitHub release](https://img.shields.io/github/release/KoljaB/speech-to-text.svg)](https://GitHub.com/KoljaB/speech-to-text/releases/)
-[![GitHub commits](https://badgen.net/github/commits/KoljaB/speech-to-text)](https://GitHub.com/Naereen/KoljaB/speech-to-text/commit/)
-[![GitHub forks](https://img.shields.io/github/forks/KoljaB/speech-to-text.svg?style=social&label=Fork&maxAge=2592000)](https://GitHub.com/KoljaB/speech-to-text/network/)
-[![GitHub stars](https://img.shields.io/github/stars/KoljaB/speech-to-text.svg?style=social&label=Star&maxAge=2592000)](https://GitHub.com/KoljaB/speech-to-text/stargazers/)
+
 
 *Easy-to-use, low-latency speech-to-text library for realtime applications*
-
-> ❗ **Project Status: Community-Driven**
-> 
-> This project is no longer being actively maintained by me due to time constraints. I've taken on too many projects and I have to step back. I will no longer be implementing new features or providing user support.
->
-> I will continue to review and merge high-quality, well-written Pull Requests from the community from time to time. Your contributions are welcome and appreciated!
 
 ## New
 
@@ -23,7 +12,6 @@
 
 Speech-to-Text listens to the microphone and transcribes voice into text.  
 
-> **Hint:** *<strong>Check out [Linguflex](https://github.com/KoljaB/Linguflex)</strong>, the original project from which Speech-to-Text is spun off. It lets you control your environment by speaking and is one of the most capable and sophisticated open-source assistants currently available.*
 
 It's ideal for:
 
@@ -173,47 +161,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
             - Click on "Download cuDNN v8.7.0 (November 28th, 2022), for CUDA 11.x".
             - Download and install the software.
     
-3. **Install ffmpeg**:
 
-    > **Note**: *Installation of ffmpeg might not actually be needed to operate Speech-to-Text* <sup> *thanks to jgilbert2017 for pointing this out</sup>
-
-    You can download an installer for your OS from the [ffmpeg Website](https://ffmpeg.org/download.html).  
-    
-    Or use a package manager:
-
-    - **On Ubuntu or Debian**:
-        ```bash
-        sudo apt update && sudo apt install ffmpeg
-        ```
-
-    - **On Arch Linux**:
-        ```bash
-        sudo pacman -S ffmpeg
-        ```
-
-    - **On MacOS using Homebrew** ([https://brew.sh/](https://brew.sh/)):
-        ```bash
-        brew install ffmpeg
-        ```
-
-    - **On Windows using Winget** [official documentation](https://learn.microsoft.com/en-us/windows/package-manager/winget/) :
-        ```bash
-        winget install Gyan.FFmpeg
-        ```
-        
-    - **On Windows using Chocolatey** ([https://chocolatey.org/](https://chocolatey.org/)):
-        ```bash
-        choco install ffmpeg
-        ```
-
-    - **On Windows using Scoop** ([https://scoop.sh/](https://scoop.sh/)):
-        ```bash
-        scoop install ffmpeg
-        ```    
-
-## Quick Start
-
-Basic usage:
 
 ### Manual Recording
 
@@ -585,29 +533,22 @@ Suggested starting parameters for OpenWakeWord usage:
         ) as recorder:
 ```
 
-## FAQ
 
-### Q: I encountered the following error: "Unable to load any of {libcudnn_ops.so.9.1.0, libcudnn_ops.so.9.1, libcudnn_ops.so.9, libcudnn_ops.so} Invalid handle. Cannot load symbol cudnnCreateTensorDescriptor." How do I fix this?
+----------------------------------------------
+🎙️ User Speech --> Completed
+      ↓
+🧩 Speech-to-Text (RealtimeSTT) -- Completed
+      ↓
+🧠 NLP Analyzer
+   ├── Detects "code" intent - Using Trigger words
+   ├── Separates logic vs description
+   └── Converts natural language to pseudo or real code
+      ↓
+💻 Code Generator
+   ├── Python code generator
+   └── Java code generator
+      ↓
+📄 Output: 
+   - Generated Code
+   - Explanation / Comments
 
-**A:** This issue arises from a mismatch between the version of `ctranslate2` and cuDNN. The `ctranslate2` library was updated to version 4.5.0, which uses cuDNN 9.2. There are two ways to resolve this issue:
-1. **Downgrade `ctranslate2` to version 4.4.0**:
-   ```bash
-   pip install ctranslate2==4.4.0
-   ```
-2. **Upgrade cuDNN** on your system to version 9.2 or above.
-
-## Contribution
-
-Contributions are always welcome! 
-
-Shoutout to [Steven Linn](https://github.com/stevenlafl) for providing docker support. 
-
-## License
-
-[MIT](https://github.com/KoljaB/Speech-to-Text?tab=MIT-1-ov-file)
-
-## Author
-
-Kolja Beigel  
-Email: kolja.beigel@web.de  
-[GitHub](https://github.com/KoljaB/Speech-to-Text)
