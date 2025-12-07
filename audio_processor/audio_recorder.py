@@ -57,6 +57,7 @@ import copy
 import os
 import re
 import gc
+from text_normalizer import TextNormalizer
 
 # Named logger for this module.
 logger = logging.getLogger("realtimestt")
@@ -112,6 +113,7 @@ class TranscriptionWorker:
         self.faster_whisper_vad_filter = faster_whisper_vad_filter
         self.normalize_audio = normalize_audio
         self.queue = queue.Queue()
+        self.text_normalizer = TextNormalizer()
 
     def custom_print(self, *args, **kwargs):
         message = ' '.join(map(str, args))
@@ -216,6 +218,7 @@ class TranscriptionWorker:
                             )
                         elapsed = time.time() - start_t
                         transcription = " ".join(seg.text for seg in segments).strip()
+                        transcription = self.text_normalizer.normalize(transcription)
                         logging.debug(f"Final text detected with main model: {transcription} in {elapsed:.4f}s")
                         self.conn.send(('success', (transcription, info)))
                     except Exception as e:
@@ -335,6 +338,7 @@ class AudioToTextRecorder:
                  faster_whisper_vad_filter: bool = True,
                  normalize_audio: bool = False,
                  start_callback_in_new_thread: bool = False,
+                 fixed_interval: float = 0.0,
                  ):
         """
         Initializes an audio recorder and  transcription
@@ -687,6 +691,7 @@ class AudioToTextRecorder:
         self.normalize_audio = normalize_audio
         self.awaiting_speech_end = False
         self.start_callback_in_new_thread = start_callback_in_new_thread
+        self.fixed_interval = fixed_interval
 
         # ----------------------------------------------------------------------------
         # Named logger configuration
@@ -706,7 +711,12 @@ class AudioToTextRecorder:
         logger.addHandler(console_handler)
 
         if not no_log_file:
-            file_handler = logging.FileHandler('realtimesst.log')
+            log_file_path = r"d:\PseudoCode\output\audio.log"
+            log_dir = os.path.dirname(log_file_path)
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+
+            file_handler = logging.FileHandler(log_file_path, encoding='utf-8')
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(logging.Formatter(file_log_format, datefmt='%Y-%m-%d %H:%M:%S'))
             logger.addHandler(file_handler)
@@ -2066,12 +2076,16 @@ class AudioToTextRecorder:
                     if ((not self.use_wake_words
                         or not wake_word_activation_delay_passed)
                             and self.start_recording_on_voice_activity) \
-                            or self.wakeword_detected:
+                            or self.wakeword_detected \
+                            or (self.fixed_interval > 0 and not self.is_recording):
 
                         if self.use_extended_logging:
                             logger.debug('Debug: Checking if voice is active')
 
-                        if self._is_voice_active():
+                        if self.use_extended_logging:
+                            logger.debug('Debug: Checking if voice is active')
+
+                        if (self.fixed_interval > 0) or self._is_voice_active():
 
                             if self.on_vad_start:
                                self._run_callback(self.on_vad_start)
@@ -2138,13 +2152,17 @@ class AudioToTextRecorder:
                     if self.use_extended_logging:
                         logger.debug('Debug: Checking if stop_recording_on_voice_deactivity is True')
                     # Stop the recording if silence is detected after speech
-                    if self.stop_recording_on_voice_deactivity:
+                    if self.stop_recording_on_voice_deactivity or (self.fixed_interval > 0 and self.is_recording):
                         if self.use_extended_logging:
                             logger.debug('Debug: Determining if speech is detected')
-                        is_speech = (
-                            self._is_silero_speech(data) if self.silero_deactivity_detection
-                            else self._is_webrtc_speech(data, True)
-                        )
+                        
+                        if self.fixed_interval > 0:
+                            is_speech = (time.time() - self.recording_start_time) < self.fixed_interval
+                        else:
+                            is_speech = (
+                                self._is_silero_speech(data) if self.silero_deactivity_detection
+                                else self._is_webrtc_speech(data, True)
+                            )
 
                         if self.use_extended_logging:
                             logger.debug('Debug: Formatting speech_end_silence_start')
