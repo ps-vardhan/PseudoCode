@@ -1,24 +1,33 @@
-# main.py -- single entrypoint to run the recorder and append transcripts to transcripts.txt
+# Main entry point for audio recording and transcription
 import os
 import time
 from datetime import datetime
-
-TRANSCRIPT_FILE = "transcripts.txt"
-
 from audio_recorder import AudioToTextRecorder
+from transcript_manager import TranscriptManager
+
+TRANSCRIPT_FILE = r"d:\PseudoCode\output\transcript\audio.log"
 
 
-def append_transcript(text: str, filename: str = TRANSCRIPT_FILE):
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] {text.strip()}\n"
-    with open(filename, "a", encoding="utf-8") as f:
-        f.write(line)
+def save_session_transcript(transcripts: list, filename: str = TRANSCRIPT_FILE):
+    """Append session transcripts with a single timestamp to file."""
+    if not transcripts:
+        return
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(filename, "a", encoding="utf-8") as file:
+        file.write(f"\n--- Session {timestamp} ---\n")
+        for i, text in enumerate(transcripts, 1):
+            file.write(f"{i}. {text.strip()}\n")
+        file.write("---------------------------\n")
 
 
 def main():
+    """Initialize and run the audio transcription recorder."""
     if not os.path.exists(TRANSCRIPT_FILE):
-        open(TRANSCRIPT_FILE, "w", encoding="utf-8").close()
-
+        with open(TRANSCRIPT_FILE, "w", encoding="utf-8") as file:
+            pass
+    
+    # Configure recorder with fixed interval
     recorder = AudioToTextRecorder(
         model="tiny",
         device="cpu",
@@ -27,33 +36,39 @@ def main():
         buffer_size=512,
         post_speech_silence_duration=0.75,
         min_length_of_recording=0.25,
-        silero_sensitivity=0.1,
+        silero_sensitivity=0.6,
         webrtc_sensitivity=0,
         debug_mode=True,
     )
 
+    session_transcripts = []
+    transcript_manager = TranscriptManager()
+    session_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    print(f"Session started at: {session_start_time}")
+
     try:
         recorder.start()
-    except Exception as e:
-        print("Failed to start recorder:", e)
+    except Exception as error:
+        print(f"Failed to start recorder: {error}")
         return
 
-    print("Recorder started. Speak into the microphone. Press Ctrl-C to stop.")
+    print("Recorder started. Listening for speech... Press Ctrl-C to stop.")
 
     try:
         while True:
-            text_result = recorder.text()
-            if text_result:
-                print("Transcribed:", text_result)
-                append_transcript(text_result)
-            time.sleep(0.1)
-
+            transcribed_text = recorder.text()
+            if transcribed_text:
+                print(f"Transcribed: {transcribed_text}")
+                session_transcripts.append(transcribed_text)
+                transcript_manager.save_transcript(transcribed_text, session_start_time)
+            
     except KeyboardInterrupt:
-        print("Stopping...")
+        print("Stopping recorder...")
 
     finally:
         recorder.shutdown()
-        print("Recorder stopped. Transcripts saved to", TRANSCRIPT_FILE)
+        save_session_transcript(session_transcripts)
+        print(f"Recorder stopped. Session transcripts saved to {TRANSCRIPT_FILE}")
 
 
 if __name__ == "__main__":
