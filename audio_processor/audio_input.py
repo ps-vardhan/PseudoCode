@@ -1,11 +1,11 @@
-
-# audio_input.py  -- improved audio input helper
+# Audio input handler for microphone recording
 from colorama import init, Fore, Style
 from scipy.signal import butter, filtfilt, resample_poly
 import pyaudio
 import logging
 import numpy as np
 
+# Audio configuration constants
 DESIRED_RATE = 16000
 CHUNK_SIZE = 1024
 AUDIO_FORMAT = pyaudio.paInt16
@@ -41,6 +41,7 @@ class AudioInput:
         self._logger.setLevel(logging.INFO if not debug_mode else logging.DEBUG)
 
     def get_supported_sample_rates(self, device_index):
+        """Query device for supported sample rates."""
         standard_rates = [8000, 9600, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000]
         supported_rates = []
         try:
@@ -55,68 +56,76 @@ class AudioInput:
                         input_format=self.audio_format,
                     ):
                         supported_rates.append(rate)
-                except ValueError:
+                except (ValueError, Exception):
                     continue
-                except Exception:
-                    continue
-        except Exception as e:
-            self._logger.debug(f"get_supported_sample_rates failed: {e}")
+        except Exception as error:
+            self._logger.debug(f"Failed to query supported sample rates: {error}")
         return supported_rates
 
     def _get_best_sample_rate(self, actual_device_index, desired_rate):
+        """Determine optimal sample rate for the device."""
         try:
             device_info = self.audio_interface.get_device_info_by_index(actual_device_index)
             supported_rates = self.get_supported_sample_rates(actual_device_index)
+            
             if not supported_rates:
                 default_rate = int(device_info.get('defaultSampleRate', 44100))
                 return default_rate
+            
             if desired_rate in supported_rates:
                 return desired_rate
-            lower = [r for r in supported_rates if r <= desired_rate]
-            if lower:
-                return max(lower)
-            higher = [r for r in supported_rates if r > desired_rate]
-            if higher:
-                return min(higher)
+            
+            # Find closest supported rate
+            lower_rates = [rate for rate in supported_rates if rate <= desired_rate]
+            if lower_rates:
+                return max(lower_rates)
+            
+            higher_rates = [rate for rate in supported_rates if rate > desired_rate]
+            if higher_rates:
+                return min(higher_rates)
+            
             return supported_rates[0]
-        except Exception as e:
-            self._logger.warning(f"Error determining sample rate: {e}")
+        except Exception as error:
+            self._logger.warning(f"Error determining sample rate: {error}")
             return 44100
 
     def list_devices(self):
+        """Display all available audio input devices."""
         try:
             init()
             self.audio_interface = pyaudio.PyAudio()
             device_count = self.audio_interface.get_device_count()
 
             print("Available audio input devices:")
-            for i in range(device_count):
-                device_info = self.audio_interface.get_device_info_by_index(i)
+            for device_id in range(device_count):
+                device_info = self.audio_interface.get_device_info_by_index(device_id)
                 device_name = device_info.get('name')
                 max_input_channels = device_info.get('maxInputChannels', 0)
 
                 if max_input_channels > 0:
-                    supported_rates = self.get_supported_sample_rates(i)
-                    print(f"{Fore.LIGHTGREEN_EX}Device {Style.RESET_ALL}{i}{Fore.LIGHTGREEN_EX}: {device_name}{Style.RESET_ALL}")
+                    supported_rates = self.get_supported_sample_rates(device_id)
+                    print(f"Device {device_id}: {device_name}")
                     if supported_rates:
-                        rates_formatted = ", ".join([f"{Fore.CYAN}{rate}{Style.RESET_ALL}" for rate in supported_rates])
-                        print(f"  {Fore.YELLOW}Supported sample rates: {rates_formatted}{Style.RESET_ALL}")
+                        rates_str = ", ".join([str(rate) for rate in supported_rates])
+                        print(f"  Supported sample rates: {rates_str}")
                     else:
-                        print(f"  {Fore.YELLOW}Supported sample rates: Unknown{Style.RESET_ALL}")
+                        print("  Supported sample rates: Unknown")
 
-        except Exception as e:
-            print(f"Error listing devices: {e}")
+        except Exception as error:
+            print(f"Error listing devices: {error}")
         finally:
             if self.audio_interface:
                 self.audio_interface.terminate()
                 self.audio_interface = None
 
     def setup(self):
+        """Initialize audio interface and open input stream."""
         try:
             self.audio_interface = pyaudio.PyAudio()
             if self.debug_mode:
                 self._logger.debug(f"Input device index: {self.input_device_index}")
 
+            # Determine which device to use
             try:
                 if self.input_device_index is None:
                     default_info = self.audio_interface.get_default_input_device_info()
@@ -124,11 +133,12 @@ class AudioInput:
                 else:
                     actual_device_index = int(self.input_device_index)
             except Exception:
+                # Fallback: find first available input device
                 actual_device_index = None
-                for i in range(self.audio_interface.get_device_count()):
-                    info = self.audio_interface.get_device_info_by_index(i)
+                for device_id in range(self.audio_interface.get_device_count()):
+                    info = self.audio_interface.get_device_info_by_index(device_id)
                     if int(info.get('maxInputChannels', 0)) > 0:
-                        actual_device_index = i
+                        actual_device_index = device_id
                         break
                 if actual_device_index is None:
                     raise RuntimeError("No input-capable device found")
@@ -151,8 +161,8 @@ class AudioInput:
                 self._logger.debug(f"Audio recording initialized successfully at {self.device_sample_rate} Hz")
             return True
 
-        except Exception as e:
-            print(f"Error initializing audio recording: {e}")
+        except Exception as error:
+            print(f"Error initializing audio recording: {error}")
             if self.audio_interface:
                 try:
                     self.audio_interface.terminate()
@@ -162,6 +172,7 @@ class AudioInput:
             return False
 
     def lowpass_filter(self, signal_arr, cutoff_freq, sample_rate):
+        """Apply Butterworth lowpass filter to signal."""
         nyquist_rate = sample_rate / 2.0
         normal_cutoff = cutoff_freq / nyquist_rate
         b, a = butter(5, normal_cutoff, btype='low', analog=False)
@@ -169,6 +180,7 @@ class AudioInput:
         return filtered_signal
 
     def resample_audio(self, pcm_data, target_sample_rate, original_sample_rate):
+        """Resample audio data to target sample rate."""
         if target_sample_rate < original_sample_rate:
             pcm_filtered = self.lowpass_filter(pcm_data, target_sample_rate / 2, original_sample_rate)
             resampled = resample_poly(pcm_filtered, target_sample_rate, original_sample_rate)
@@ -177,17 +189,19 @@ class AudioInput:
         return resampled
 
     def read_chunk(self):
+        """Read a chunk of audio data from the stream."""
         try:
             data = self.stream.read(self.chunk_size, exception_on_overflow=False)
             return data
-        except IOError as e:
-            self._logger.warning(f"Audio read overflow: {e}")
+        except IOError as error:
+            self._logger.warning(f"Audio read overflow: {error}")
             return (b'\x00' * self.chunk_size * 2)
-        except Exception as e:
-            self._logger.error(f"Unhandled error reading audio chunk: {e}")
+        except Exception as error:
+            self._logger.error(f"Unhandled error reading audio chunk: {error}")
             raise
 
     def cleanup(self):
+        """Clean up audio resources and close streams."""
         try:
             if self.stream:
                 try:
@@ -205,5 +219,5 @@ class AudioInput:
                 except Exception:
                     pass
                 self.audio_interface = None
-        except Exception as e:
-            print(f"Error cleaning up audio resources: {e}")
+        except Exception as error:
+            print(f"Error cleaning up audio resources: {error}")
