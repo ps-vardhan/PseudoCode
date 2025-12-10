@@ -1,0 +1,282 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #121212;
+    /* Black/Dark background */
+    color: #e0e0e0;
+}
+
+#app {
+    max-width: 95%;
+    /* Increased from 900px */
+    margin: 0 auto;
+    background: #1e1e1e;
+    /* Gray area */
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 40px;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.columns-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    /* Do not force equal height by default unless desired, but user said 'extend down' */
+}
+
+/* On larger screens, side-by-side */
+.input-section,
+.output-section {
+    flex: 1;
+    min-width: 0;
+    /* Fix flexbox overflow issues */
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+    .columns-container {
+        flex-direction: column;
+    }
+}
+
+.mic-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center horizontally */
+    gap: 15px;
+    /* Space between mic and button */
+    margin-bottom: 20px;
+}
+
+/* Header Controls Group */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Header Dropdown */
+.lang-select-header {
+    background: transparent;
+    border: none;
+    color: #bdbdbd;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    /* Remove default appearance somewhat */
+}
+
+.lang-select-header option {
+    background: #383838;
+    color: #e0e0e0;
+}
+
+.lang-select-header:focus {
+    outline: none;
+    color: #ffffff;
+}
+
+.mic-btn {
+    background-color: #ef5350;
+    /* Softer red */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 80px;
+    /* Bigger */
+    height: 80px;
+    /* Bigger */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 10px rgba(239, 83, 80, 0.4);
+}
+
+.mic-btn svg {
+    width: 40px;
+    height: 40px;
+}
+
+.mic-btn:hover {
+    background-color: #e53935;
+    transform: scale(1.1);
+    box-shadow: 0 6px 15px rgba(239, 83, 80, 0.6);
+}
+
+.mic-btn:active {
+    transform: scale(0.95);
+}
+
+.mic-btn.listening {
+    background-color: #66bb6a;
+    animation: pulse 1.5s infinite;
+}
+
+
+/* Container for label + textarea + copy button */
+.text-box-container {
+    background: #2d2d2d;
+    border: 1px solid #424242;
+    border-radius: 8px;
+    overflow: hidden;
+    /* Ensure header stays inside corners */
+    display: flex;
+    flex-direction: column;
+}
+
+.box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #383838;
+    padding: 8px 15px;
+    border-bottom: 1px solid #424242;
+}
+
+.box-label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #bdbdbd;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.copy-btn {
+    background: transparent;
+    border: none;
+    color: #9e9e9e;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s, background 0.2s;
+}
+
+.copy-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 15px;
+    border: none;
+    /* Border handled by container */
+    background: #2d2d2d;
+    color: #e0e0e0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    /* Monospace for both usually looks cleaner in code tools */
+    font-size: 1em;
+    resize: none;
+    /* Disable manual resize as we auto-resize */
+    overflow: hidden;
+    /* Hide scrollbar */
+    box-sizing: border-box;
+    display: block;
+}
+
+textarea:focus {
+    outline: none;
+    background: #333333;
+}
+
+#description-input {
+    font-family: 'Segoe UI', sans-serif;
+}
+
+#code-output {
+    font-family: 'Consolas', monospace;
+    color: #9cdcfe;
+    /* VSCode-like blue for text */
+}
+
+/* Code Output Block */
+pre.code-block {
+    margin: 0;
+    width: 100%;
+    min-height: 180px;
+    background: #0e0e0e;
+    /* Slightly darker than textarea */
+    border-radius: 8px;
+    /* Inner radius */
+    padding: 15px;
+    white-space: pre-wrap;
+    /* Auto-wrap */
+    word-break: break-all;
+    overflow-x: auto;
+    font-size: 0.95rem;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    color: #e0e0e0;
+    box-sizing: border-box;
+    border: none;
+}
+
+/* Ensure code element inherits correctly */
+pre.code-block code {
+    font-family: inherit;
+    background: transparent;
+    padding: 0;
+}
+
+.generate-btn {
+    display: block;
+    width: auto;
+    min-width: 150px;
+    padding: 10px 24px;
+    background: #e74c3c;
+    border: none;
+    border-radius: 20px;
+    /* Pill shape */
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.generate-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.generate-btn:active {
+    transform: translateY(0);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(102, 187, 106, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(102, 187, 106, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(102, 187, 106, 0);
+    }
+}
